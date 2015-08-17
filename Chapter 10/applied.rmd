@@ -1,0 +1,38 @@
+7
+---
+
+```
+#scaled <- scale(t(USArrests))
+#dists = dist(scaled)^2
+#cors = as.dist(1 - cor(t(scaled)))
+#summary(cors/dists)
+```
+
+8
+---
+
+Scaled because as noted in the text, Assault dominates everything were the values not scaled.
+
+####a)
+
+```
+pca <- prcomp(USArrests, scale=TRUE)
+pve1 <- cumsum((pca$sdev^2)/sum(pca$sdev^2))
+```
+
+####b)
+
+
+```
+pca <- prcomp(USArrests, scale=TRUE)
+scaled = scale(USArrests)
+vars = colSums((scaled %*% pca$rotation)^2)
+total.var = sum(scaled^2)
+cumsum(vars/total.var)
+```
+
+As expected, same results (with some rounding errors)
+
+9
+---
+

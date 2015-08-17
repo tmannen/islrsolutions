@@ -1,0 +1,184 @@
+#Applied
+
+7
+---
+
+```
+library(ISLR)
+library(MASS)
+library(tree)
+library(randomForest)
+library(ggplot2)
+library(boot)
+library(tree)
+library(gbm)
+
+attach(Boston)
+set.seed(1)
+
+train = sample(1:nrow(Boston), nrow(Boston)/2)
+medv.test = Boston[-train,]$medv
+ntree.range = seq(25, 825, 50)
+mtry.range = seq(2, 12, 2)
+
+fit_and_predict <- function(mtry, ntree) {
+    forest = randomForest(medv~., data=Boston, subset=train, mtry=mtry, ntree=ntree)
+    yhat = predict(forest, newdata=Boston[-train,])
+    mean((yhat - medv.test)^2)
+}
+
+#every mtry has length(ntree.range) different results
+values <- matrix(,nrow=length(mtry.range), ncol=length(ntree.range))
+
+count = 1
+for (i in ntree.range) {
+    values[,count] <- sapply(mtry.range, fit_and_predict, ntree=i)
+    count = count+1
+}
+
+freimi <- data.frame(t(values))
+colnames(freimi) <- c(2,4,6,8,10,12)
+
+# there's probably a better way to do this..
+p <- ggplot(freimi)
+p <- p + geom_line(aes(x=ntree.range, y=freimi$`2`), colour="blue", data=freimi)
+p <- p + geom_line(aes(x=ntree.range, y=freimi$`4`), colour="red", data=freimi)
+p <- p + geom_line(aes(x=ntree.range, y=freimi$`6`), colour="green", data=freimi)
+p <- p + geom_line(aes(x=ntree.range, y=freimi$`8`), colour="black", data=freimi)
+p <- p + geom_line(aes(x=ntree.range, y=freimi$`10`), colour="yellow", data=freimi)
+p <- p + geom_line(aes(x=ntree.range, y=freimi$`12`), colour="cyan", data=freimi)
+p
+```
+
+From the plot we can see the minimum happens at the red line which corresponds to mtry=4. The minimum happens at ntree=375. The green line (or mtry=6) seems to have better overall results.
+
+8
+---
+
+####a)
+
+```
+train = sample(1:nrow(Carseats), nrow(Carseats)/2)
+trainset = Carseats[train,]
+testset = Carseats[-train,]
+```
+
+####b)
+
+```
+library(tree)
+set.seed(1)
+attach(Carseats)
+tree.carseats = tree(Sales~., data=Carseats, subset=train)
+plot(tree.carseats)
+text(tree.carseats,pretty=0)
+yhat <- predict(tree.carseats, testset)
+mse = mean((testset$Sales - yhat)^2)
+```
+
+MSE = 5.128
+
+####c)
+
+```
+cv.carseats = cv.tree(tree.carseats)
+prune.carseats = prune.tree(tree.carseats,best=9)
+cv.carseats #9 is best, though differences are small
+prunepred <- predict(prune.carseats,testset)
+mse = mean((testset$Sales - prunepred)^2)
+```
+
+Slightly smaller MSE. MSE = 4.92
+
+####d)
+
+```
+library(randomForest)
+set.seed(1)
+bag.carseats = randomForest(Sales~., data=Carseats,subset=train,mtry=ncol(Carseats)-1,importance=TRUE)
+yhat <- predict(bag.carseats, newdata=testset)
+mse = mean((testset$Sales - yhat)^2)
+importance(bag.carseats)
+```
+
+Big improvement. MSE = 2.9
+
+####e)
+
+```
+forest.carseats = randomForest(Sales~., data=Carseats,subset=train,mtry=3,importance=TRUE)
+yhat <- predict(forest.carseats, newdata=testset)
+mse = mean((testset$Sales - yhat)^2)
+importance(bag.carseats)
+```
+
+MSE is 3.27. Effect of mtry was looked at in exercise 7.
+
+9
+---
+
+Kinda similar to last two, do maybe later
+
+10
+---
+
+####a)
+
+```
+LogHitters = Hitters[!is.na(Hitters$Salary),]
+LogHitters$Salary = log(LogHitters$Salary)
+```
+
+####b)
+
+```
+set.seed(1)
+train = sample(nrow(LogHitters), nrow(LogHitters)/2)
+loghitters.train = LogHitters[train,]
+loghitters.test = LogHitters[-train,]
+```
+
+####c)
+
+```
+shrinkage.range = c(0.001, 0.01, 0.05, 0.1, 0.15, 0.2, 0.25, 0.3)
+mses = length(shrinkage.range)
+count = 1
+for (lambda in shrinkage.range) {
+    boost.hitters = gbm(Salary~., data=loghitters.train, distribution="gaussian", n.trees=1000,interaction.depth=4,shrinkage=lambda)
+    yhat.boost = predict(boost.hitters,newdata=loghitters.train,n.trees=1000)
+    mses[count] = mean((yhat.boost - loghitters.train$Salary)^2)
+    count = count+1
+}
+qplot(shrinkage.range, mses, geom="line")
+```
+
+####d)
+
+```
+shrinkage.range = c(0.001, 0.01, 0.05, 0.1, 0.15, 0.2, 0.25, 0.3)
+mses = length(shrinkage.range)
+count = 1
+for (lambda in shrinkage.range) {
+    boost.hitters = gbm(Salary~., data=loghitters.train, distribution="gaussian", n.trees=1000,interaction.depth=4,shrinkage=lambda)
+    yhat.boost = predict(boost.hitters,newdata=loghitters.test,n.trees=1000)
+    mses[count] = mean((yhat.boost - loghitters.test$Salary)^2)
+    count = count+1
+}
+qplot(shrinkage.range, mses, geom="line")
+```
+
+####e)
+
+####f)
+
+```
+summary(boost.hitters)
+```
+
+CAtBat is by far the biggest, followed by Walks, PutOuts and CHits.
+
+12
+---
+
+DO LATER

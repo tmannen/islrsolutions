@@ -1,0 +1,122 @@
+
+6
+---
+
+####a)
+
+```
+library(ISLR)
+library(boot)
+attach(Wage)
+cv.error = rep(0, 7)
+set.seed(1)
+
+for(i in 1:7) {
+    #glm is used so we can use the crossvalidation function
+    #from boot library
+    lmfit <- glm(wage~poly(age, i, raw=T), data=Wage)
+    cv.error[i] = cv.glm(Wage, lmfit, K=10)$delta[1]
+}
+
+cv.error
+which.min(cv.error)
+
+bestfit <- glm(wage~poly(age, which.min(cv.error)), data=Wage)
+
+agelims =range(age)
+age.grid=seq(from=agelims [1],to=agelims [2])
+preds=predict (bestfit,newdata=list(age=age.grid),se=TRUE)
+se.bands=cbind(preds$fit + 2*preds$se.fit ,preds$fit - 2*preds$se.fit)
+
+par(mfrow=c(1,2),mar=c(4.5,4.5,1,1) ,oma=c(0,0,4,0))
+plot(age ,wage ,xlim=agelims ,cex =.5,col="darkgrey")
+title("Degree -4 Polynomial",outer=T)
+lines(age.grid, preds$fit, lwd=2, col="blue")
+matlines(age.grid, se.bands, lwd=1, col="blue", lty=3)
+
+#anova
+
+fit.1 = lm(wage~age, data=Wage)
+fit.2 = lm(wage~poly(age, 2), data=Wage)
+fit.3 = lm(wage~poly(age, 3), data=Wage)
+fit.4 = lm(wage~poly(age, 4), data=Wage)
+fit.5 = lm(wage~poly(age, 5), data=Wage)
+fit.6 = lm(wage~poly(age, 6), data=Wage)
+fit.7 = lm(wage~poly(age, 7), data=Wage)
+
+anova(fit.1,fit.2,fit.3,fit.4,fit.5,fit.6,fit.7)
+```
+
+The results agree that 4th degree polynomial is most likely the best, though the p-value is sort of small in the fourth one.
+
+####b)
+
+```
+cv.error = rep(0, 10)
+set.seed(1)
+
+for(i in 2:11) {
+    #glm is used so we can use the crossvalidation function
+    #from boot library
+    Wage$ageknots = cut(Wage$age, i)
+    lmfit <- glm(wage~ageknots, data=Wage)
+    cv.error[i-1] = cv.glm(Wage, lmfit, K=10)$delta[1]
+}
+
+cv.error
+minerror = which.min(cv.error)
+Wage$ageknots = cut(Wage$age, minerror)
+bestfit <- glm(wage~ageknots, data=Wage)
+plot(age, wage)
+```
+
+Minimum at 7 cuts.
+
+7
+---
+
+```
+boxplot(wage~maritl, data=Wage)
+boxplot(wage~jobclass, data=Wage)
+boxplot(wage~race, data=Wage)
+boxplot(wage~health, data=Wage)
+```
+
+Being married, having an information related job and being asian are most positively correlated with wage. Having very good health is also obviously positively correlated. The dataset only contains men from the same region so they are the same for everyone.
+
+TODO: Categorical variables - do we fit them one by one?
+
+8
+---
+
+Fit some of the non-linear models investigated in this chapter to the Auto data set. Is there evidence for non-linear relationships in this data set? Create some informative plots to justify your answer.
+
+Horsepower seems to be nonlinearly correlated with mpg.
+
+Splines:
+
+```
+attach(Auto)
+library(boot)
+library(splines)
+errors = rep(NA,10)
+for (i in 3:10) {
+  splinefit = glm(mpg~ns(horsepower, df=i), data=Auto)
+  errors[i] = cv.glm(Auto, splinefit, K=10)$delta[1]
+}
+
+errors
+which.min(errors)
+hplims =range(horsepower)
+hp.grid=seq(from=hplims [1],to=hplims [2])
+bestfit = glm(mpg~ns(horsepower, df=which.min(errors)), data=Auto)
+preds = predict(bestfit, newdata=list(horsepower=hp.grid), se=TRUE)
+plot(horsepower, mpg)
+lines(hp.grid, preds$fit)
+```
+
+The plot seems fine except for maybe at the beginning of the plot.
+
+9
+---
+

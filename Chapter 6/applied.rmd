@@ -1,0 +1,304 @@
+
+```
+library(ISLR)
+library(MASS)
+library(leaps)
+library(glmnet)
+library(PLS)
+```
+
+8
+---
+
+####a)
+```
+set.seed(1)
+X <- rnorm(100)
+noise <- rnorm(100)
+```
+####b)
+
+```
+Y <- rep(3, 100) + 2*X + 5*X^2 + 3*X^3 + noise
+```
+
+####c)
+```
+datas <- data.frame(X,Y)
+regfit <- regsubsets(Y~poly(X, 10, raw=T), data=datas, nvmax=10)
+par(mfrow=c(2,2))
+which.min(regsummary$cp)
+which.min(regsummary$bic)
+which.min(regsummary$adjr2)
+plot(regfit, scale="Cp")
+plot(regfit, scale="bic")
+plot(regfit, scale="adjr2")
+coef(regfit, id=3)
+```
+
+We see that the model with 3 coefficients is almost always the winner.
+
+####d)
+```
+par(mfrow=c(2,2))
+regfit.fwd <- regsubsets(Y~poly(X, 10, raw=T), data=datas, nvmax=10, method="forward")
+plot(regfit.fwd, scale="Cp")
+plot(regfit.fwd, scale="bic")
+plot(regfit.fwd, scale="adjr2")
+```
+
+```
+regfit.bwd <- regsubsets(Y~poly(X, 10, raw=T), data=datas, nvmax=10, method="backward")
+plot(regfit.bwd, scale="Cp")
+plot(regfit.bwd, scale="bic")
+plot(regfit.bwd, scale="adjr2")
+```
+
+forward and backward stepwise algorithms find the same best results as subset search, but the variables chosed differ when we look at the worse models.
+
+####e)
+
+```
+grid=10^seq(10,-2, length =100)
+x=model.matrix(Y~poly(X, 10, raw=T), datas)[,-1]
+y=datas$Y
+train <- sample(1:nrow(x), nrow(x)/2)
+cv.out = cv.glmnet(x[train,], y[train], alpha=1)
+plot(cv.out)
+bestlambda <- cv.out$lambda.min
+lassofull <- glmnet(x, y, alpha=1)
+lasso.coef <- predict(lassofull, type="coefficients", s=bestlambda)
+lasso.coef[1:10,]
+```
+
+The lasso leaves only 3 of the variables as nonzero. Best lambda is also very close to 0, suggesting that least squares is the best fit here.
+
+####f)
+
+Following similar steps as above, they both find that the seventh is a good predictor.
+
+9
+---
+
+####a)
+```
+set.seed(1)
+train <- sample(1:nrow(College), ceiling(nrow(College)/2))
+```
+
+####b)
+
+```
+lmfit <- lm(Apps~., data=College[train,])
+lm.pred <- predict(lmfit, College[-train,])
+# MSE
+mean((lm.pred - College[-train,]$Apps)^2)
+```
+
+Score of 1108761.
+
+####c)
+
+```
+set.seed(1)
+x = model.matrix(Apps~., College)[,-1]
+y = College$Apps
+cv.out = cv.glmnet(x[train,], y[train], alpha=0)
+ridge <- glmnet(x[train,], y[train], alpha=0)
+ridge.pred <- predict(ridge, s=cv.out$lambda.min, newx=x[-train,])
+mean((ridge.pred - y[-train])^2)
+```
+
+Score of 1039941, a bit better than vanilla least squares.
+
+####d)
+
+```
+set.seed(1)
+x = model.matrix(Apps~., College)[,-1]
+y = College$Apps
+cv.out = cv.glmnet(x[train,], y[train], alpha=1)
+ridge <- glmnet(x[train,], y[train], alpha=1)
+ridge.pred <- predict(ridge, s=cv.out$lambda.min, newx=x[-train,])
+mean((ridge.pred - y[-train])^2)
+```
+
+Score of 1074718. A bit better than least squares but worse than ridge regression.
+
+####e)
+
+```
+library(pls)
+pcr.fit <- pcr(Apps~., data=College[train,], scale=TRUE, validation="CV")
+validationplot(pcr.fit ,val.type="MSEP")
+pcr.pred = predict(pcr.fit, College[-train,], ncomp=5)
+mean((pcr.pred - College[-train,]$Apps)^2)
+```
+
+The lowest error is at 16, but that doesn't really give us a good reduction in dimensions. The error goes down at 5 and stays there for a while, so let's use that. Gives an error of 1912082.
+
+####f)
+
+```
+library(pls)
+pls.fit <- plsr(Apps~., data=College[train,], scale=TRUE, validation="CV")
+validationplot(pls.fit ,val.type="MSEP")
+pls.pred = predict(pls.fit, College[-train,], ncomp=7)
+mean((pls.pred - College[-train,]$Apps)^2)
+```
+
+Score of 1134316. We choose 7 because error plateaus around there.
+
+####g)
+
+CONTINUE LATER, R squared.
+Ridge regression gets the best results here.
+
+10
+---
+
+####a)
+
+```
+set.seed(1)
+nrow <- 1000
+ncol <- 20
+X <- matrix(rnorm(nrow*ncol), nrow=nrow, ncol=ncol)
+noise <- rnorm(nrow)
+B <- rnorm(ncol)
+B[c(3,8,15,10)] <- 0
+Y <- X %*% B + noise
+dataset <- data.frame(Y, X)
+```
+
+####b)
+
+```
+train <- sample(nrow, 100)
+```
+
+####c)
+
+```
+regfit <- regsubsets(Y~., data=dataset[train,], nvmax=20)
+plot(regfit$rss/100, xlab="Number of variables", ylab="RSS", type="l")
+```
+
+####d)
+
+```
+test.mat <- model.matrix(Y~., data=dataset[-train,])
+val.errors = rep(NA, 20)
+for(i in 1:20) {
+    coefi = coef(regfit, id=i)
+    pred = test.mat[,names(coefi)] %*% coefi
+    val.errors[i] = mean((dataset$Y[-train] - pred)^2)
+}
+
+which.min(val.errors)
+plot(val.errors, xlab="Number of variables", ylab="MSE", type="l")
+```
+
+####e and f)
+
+Lowest error happens at 14 variables. The original B had 4 variables as zero, so it had 16 variables at nonzero. 14 variables is a pretty good guess.
+
+####g)
+
+DO LATER
+```
+bee <- data.frame(c(B, 1))
+names <- c("X1", "X2", "X3", "X4", "X5", "X6", "X7", "X8", "X9", "X10", "X11", "X12", "X13", "X14", "X15", "X16", "X17", "X18", "X19", "X20", "(Intercept)")
+rownames(bee) <- names
+coef.errors = rep(NA, 20)
+for(i in 1:20) {
+    coefi = coef(regfit, id=i)
+    coef.errors[i] = sqrt(coefi - bee[names(coefi),])^2)
+}
+
+plot(coef.errors, type="l")
+```
+
+11
+---
+
+```
+mean((Boston$crim - mean(Boston$crim))^2)
+```
+
+If we simply predicted the mean value for crime, we'd get 73.84036 MSE. If a model doesn't give much better results than this it's useless.
+
+####a)
+
+```
+# exhaustive subset search
+set.seed(1)
+train <- sample(nrow(Boston), floor(nrow(Boston)/1.5))
+
+regfit <- regsubsets(crim~., data=Boston[train,], nvmax=ncol(Boston))
+test.mat <- model.matrix(crim~., data=Boston[-train,])
+val.errors = rep(NA, 13)
+for(i in 1:13) {
+    coefi = coef(regfit, id=i)
+    pred = test.mat[,names(coefi)] %*% coefi
+    val.errors[i] = mean((Boston$crim[-train] - pred)^2)
+}
+
+which.min(val.errors)
+plot(val.errors, xlab="Number of variables", ylab="MSE", type="l")
+min(val.errors)
+```
+
+We get the best result at 12 variables, with 10 variable model getting very close. MSE is 48.5.
+
+```
+# ridge regression
+x = model.matrix(crim~., Boston)[,-1]
+y = Boston$crim
+cv.out = cv.glmnet(x[train,],y[train],alpha=0)
+plot(cv.out)
+ridge <- glmnet(x[train,], y[train], alpha=0)
+ridge.pred <- predict(ridge, s=cv.out$lambda.min, newx=x[-train,])
+mean((ridge.pred - y[-train])^2)
+```
+
+We get an MSE of 48.7. Very close to the best subset modeling.
+
+```
+# lasso
+cv.out = cv.glmnet(x[train,],y[train],alpha=1)
+plot(cv.out)
+lasso <- glmnet(x[train,], y[train], alpha=1)
+lasso.pred <- predict(lasso, s=cv.out$lambda.min, newx=x[-train,])
+mean((lasso.pred - y[-train])^2)
+```
+
+We get an MSE of 48.46. Again very slightly better, but not much improvement. However we now see that age and tax are zero, and black very close to zero, giving us information about the correlations.
+
+```
+# PCR
+pcr.fit <- pcr(crim~., data=Boston[train,], scale=TRUE, validation="CV")plot(cv.out)
+validationplot(pcr.fit ,val.type="MSEP")
+pcr.pred = predict(pcr.fit, Boston[-train,], ncomp=11)
+mean((pcr.pred - Boston[-train,]$crim)^2)
+```
+
+MSE of 50.68! Not a good result. PCR also doesn't tell anything about the variables.
+
+```
+# PLS
+pls.fit <- plsr(crim~., data=Boston[train,], scale=TRUE, validation="CV")
+validationplot(pls.fit ,val.type="MSEP")
+pls.pred = predict(pls.fit, Boston[-train,], ncomp=5)
+mean((pls.pred - Boston[-train,]$crim)^2)
+```
+
+We use 5 components since that's where a dip is. Gives an MSE of 49.
+
+####b)
+
+Judging from the results above (though only one testset was used so the results might not be the best, crossvalidation would be better) we see that lasso gives the best results and also gives us information about the variables that correlate with crime, which is the reason we're using this data.
+
+####c)
+
+No, the lasso excludes 'age' and 'tax'. However by looking at the correlations with cor(Boston) we see that crim and expecially tax are correlated almost the most out of any other variables. This could be explained by the other variables being collinear with tax, like rad especially, and indus, which are in the lasso model.

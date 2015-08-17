@@ -1,0 +1,250 @@
+```
+library(ISLR)
+library(MASS)
+```
+
+5
+---
+
+####a)
+```
+attach(Default)
+set.seed(1)
+lrfit <- glm(default~income+balance, data=Default, family="binomial")
+```
+
+####b)
+```
+train <- sample(nrow(Default), nrow(Default)/2)
+lrfit <- glm(default~income+balance, data=Default, subset=train, family="binomial")
+lrprobs <- predict(lrfit, Default[-train,], type="response")
+lrpred <- rep("No", 5000)
+lrpred[lrprobs>0.5] = "Yes"
+realvalues = Default[-train,]$default
+vs <- realvalues==lrpred
+length(vs[!vs])/length(vs) #vs[!vs] has all the values that didnt match (FALSE)
+```
+
+####c)
+
+Trying three times with three different seeds, the error rate changes quite a bit with different seeds.
+
+####d)
+
+```
+set.seed(1)
+train <- sample(nrow(Default), nrow(Default)/2)
+lrfit <- glm(default~income+balance+student, data=Default, subset=train, family="binomial")
+lrprobs <- predict(lrfit, Default[-train,], type="response")
+lrpred <- rep("No", 5000)
+lrpred[lrprobs>0.5] = "Yes"
+realvalues = Default[-train,]$default
+vs <- realvalues==lrpred
+length(vs[!vs])/length(vs) #vs[!vs] has all the values that didnt match (FALSE)
+```
+
+The error rate stays around the same, so being a student doesn't seem to have much to do with defaulting.
+
+6
+---
+
+####a)
+```
+set.seed(1)
+lrfit <- glm(default~income+balance, data=Default, family="binomial")
+summary(lrfit)
+```
+
+####b)
+
+```
+boot.fn <- function(data, indexes) {
+    lrfit <- glm(default~income+balance, data=data, subset=indexes, family="binomial")
+    return(coef(lrfit))
+    
+}
+```
+
+####c)
+
+```
+library(boot)
+boot(data=Default, statistic=boot.fn, R = 1000)
+```
+
+####d)
+
+The answers are almost the same as with summary()
+
+7
+---
+
+####a)
+```
+lrfit <- glm(Direction ~ Lag1 + Lag2, data=Weekly, family="binomial")
+```
+
+####b)
+
+```
+lrfit <- glm(Direction ~ Lag1 + Lag2, data=Weekly, subset=-1, family="binomial")
+prediction <- predict(lrfit, Weekly[1,], type="response")
+prediction[prediction > 0.5] <- "Up"
+prediction == Weekly[1,]$Direction
+```
+
+The prediction is wrong in this case.
+
+####c)
+
+```
+prediction <- predict(lrfit, Weekly[1,], type="response")
+prediction[prediction > 0.5] <- "Up"
+prediction == Weekly[1,]$Direction
+```
+
+The prediction is wrong in this case.
+
+####d)
+
+```
+LOOCV <- function(data) {
+    # predictions is where we store the probabilities, responses where we determine whether it's
+    # up or down. 'responses' eases checking for errors.
+    predictions <- rep(0, nrow(data))
+    responses <- rep("Down", nrow(data))
+    for(i in 1:nrow(data)) {
+        lrfit <- glm(Direction ~ Lag1 + Lag2, data=data, subset=-i, family="binomial")
+        predictions[i] <- predict(lrfit, data[i,], type="response")
+    }
+    
+    responses[predictions > 0.5] <- "Up"
+    errors <- rep(0, nrow(data))
+    errors[responses != Weekly$Direction] <- 1
+    errors
+}
+```
+
+####e)
+
+```
+mean(LOOCV(Weekly))
+```
+
+Gives 0.45, so 45% error rate. Considering that if you predicted "Up" every time you would get similar/better results, this result is not that encouraging.
+
+8
+---
+
+####a)
+```
+set.seed(1)
+y=rnorm(100)
+x=rnorm(100)
+y=x-2*x^2+rnorm (100)
+```
+
+There is one predictor so p = 1. rnorm(100) returns 100 numbers so n = 100.
+
+####b)
+
+```
+plot(x,y)
+```
+
+y seems to be nonlinearly correlated with x.
+
+####c)
+
+```
+set.seed(10)
+data <- data.frame(y=y, x=x)
+for (i in 1:4) {
+    lmfit <- glm(y~poly(x, i))
+    print(cv.glm(data ,lmfit)$delta[1])
+}
+
+```
+
+####d)
+
+The same as LOOCV goes through every observation, so there is no randomness.
+
+####e)
+
+The second. Considering the data is also second degree polynomial, it makes sense.
+
+####f)
+
+Printing a summary in each iteration, the second always has the lowest p-value and thus most important. Other values have high p-values.
+
+9
+---
+
+####a)
+
+```
+mu = mean(Boston$medv)
+```
+
+####b)
+
+```
+sd(Boston$medv)/sqrt(nrow(Boston))
+```
+
+Equals around 0.4. So medv is quite heavily centered on the mean 22.53.
+
+####c)
+
+```
+sestimate <- function(data, indexes) {
+    sd(data$medv[indexes])/sqrt(nrow(data[indexes,]))
+}
+
+boot(data=Boston, statistic=sestimate, R = 1000)
+```
+
+The estimates are pretty much identical. Standard error differs a little.
+
+####d)
+
+```
+mu - boot(data=Boston, statistic=sestimate, R = 1000)$t0
+mu + boot(data=Boston, statistic=sestimate, R = 1000)$t0
+```
+
+####e)
+
+```
+median(Boston$medv)
+```
+
+####f)
+
+```
+bootmedian <- function(data, indexes) {
+    median(data$medv[indexes])
+}
+
+boot(data=Boston, statistic=bootmedian, R=1000)
+```
+
+Gives standard error of the median as 0.3856.
+
+####g)
+
+```
+medianestimate <- boot(data=Boston, statistic=bootmedian, R=1000)
+quantile(medianestimate$t, 0.1)
+```
+
+h)
+
+```
+bootquantile <- function(data, indexes) {
+    quantile(data$medv[indexes], 0.1)
+}
+
+boot(data=Boston, statistic=bootquantile, R=1000)
+```

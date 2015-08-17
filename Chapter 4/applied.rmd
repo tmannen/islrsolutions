@@ -1,0 +1,224 @@
+10
+---
+
+```
+library(ISLR)
+library(MASS)
+```
+
+####a)
+
+```
+summary(Weekly)
+pairs(Weekly)
+```
+
+Volume is rising every year and the the last years the growth seems almost exponential.
+
+####b)
+
+```
+glmfit <- glm(Direction~Lag1+Lag2+Lag3+Lag4+Lag5+Volume, data=Weekly, family="binomial")
+summary(glmfit)
+```
+
+Lag2 has a p-value of 0.03, which is statistically significant. The percentual change two weeks ago could tell something about the direction.
+
+####c)
+
+```
+contrasts(Direction)
+glm.pred <- rep("Down", 1089)
+glm.pred[glm.probs>.5]="Up"
+table(glm.pred, Direction)
+```
+
+From the confusion matrix, the model predicted the direction right (54+557)/1089 = 0.56 = 56% of the time. However this is on the training set and the model would most likely get worse results on a test set.
+
+####d)
+
+```
+train <- (Year < 2009)
+trainset <- Weekly[train,]
+testset <- Weekly[!train,]
+glmfit2 <- glm(Direction~Lag2, data=trainset, family="binomial")
+glm2probs <- predict(glmfit2, testset, type="response")
+glm2pred <- rep("Down", 104)
+glm2pred[glm2probs>.5]="Up"
+test <- Direction[!train]
+table(glm2pred, test)
+```
+Gives results:
+
+```
+        test
+glm2pred Down Up
+    Down    9  5
+    Up     34 56
+```
+    
+(9+56)/104 = 0.625 = 62.5% success rate
+
+####e)
+
+```
+train <- (Year < 2009)
+trainset <- Weekly[train,]
+testset <- Weekly[!train,]
+ldafit <- lda(Direction~Lag2, data=trainset)
+ldaclass <- predict(ldafit, testset, type="response")$class
+test <- Direction[!train]
+table(ldaclass, test)
+```
+
+Gives results:
+
+```
+        test
+ldaclass Down Up
+    Down    9  5
+    Up     34 56
+```
+    
+0.625 = 62.5% success rate
+   
+####f)
+
+```
+train <- (Year < 2009)
+trainset <- Weekly[train,]
+testset <- Weekly[!train,]
+qdafit <- qda(Direction~Lag2, data=trainset)
+qdaclass <- predict(qdafit, testset)$class
+test <- Direction[!train]
+table(qdaclass, test)
+```
+
+Gives results:
+
+```
+        test
+qdaclass Down Up
+    Down    0  0
+    Up     43 61
+```
+    
+So it predicts Up for every week, which is not very useful (though in general a good idea as stock markets trend up)
+
+0.5866 = 58.7% success rate
+
+####g)
+
+```
+library(class)
+train.X <- cbind(Lag2)[train,]
+test.X <- cbind(Lag2)[!train,]
+knn.pred <- knn(data.frame(train.X), data.frame(test.X), trainset$Direction,k=1)
+table(knn.pred, test)
+```
+
+Gives results:
+
+```
+        test
+knn.pred Down Up
+    Down   21 30
+    Up     22 31
+    
+```
+
+50% success rate
+    
+####h)
+
+The LDA and logistic regression both get a 62.5% success rate, so they fit the best.
+
+11
+---
+
+####a)
+
+```
+library(ISLR)
+library(MASS)
+data(Auto)
+attach(Auto)
+mpg01 <- rep(0, 392)
+mpg01[mpg > median(mpg)] = 1
+autowithmpg <- data.frame(Auto, mpg01)
+```
+
+####b)
+```
+pairs(autowithmpg)
+plot(as.factor(mpg01), autowithmpg$displacement)
+cor()
+```
+
+####c)
+
+Randomly sample from the amount of rows and use these to subset the data:
+
+```
+randomrows <-sample(1:nrow(autowithmpg),nrow(autowithmpg))
+train <- autowithmpg[randomrows[1:280],]
+test <- autowithmpg[randomrows[281:392],]
+```
+
+####d)
+
+From the pairs() function we can eye that acceleration is slightly positively correlated with mpg01 and horsepower, weight and displacement negatively. Let's use these in the LDA function:
+
+```
+ldafit <- lda(mpg01~acceleration + weight + horsepower + displacement, data=train)
+ldaresult <- predict(ldafit, test, type="response")
+table(ldaresult$class, test$mpg01)
+```
+
+     0  1
+  0 46  2
+  1  8 56
+  
+From the table we can see that the model predicted wrong 10 times out of 112, se test error rate was 10/112 = 0.09 = 9%.
+
+####e)
+
+```
+qdafit <- qda(mpg01~acceleration + weight + horsepower + displacement, data=train)
+qdaresult <- predict(qdafit, test, type="response")
+table(qdaresult$class, test$mpg01)
+```
+
+     0  1
+  0 47  2
+  1  7 56
+  
+Now the test error rate is 9/110 = 0.08 = 8%.
+
+####f)
+
+```
+lrfit <- glm(mpg01~acceleration + weight + horsepower + displacement, data=train, family="binomial")
+lrresult <- predict(lrfit, test, type="response")
+lrpred <- rep(0, nrow(test))
+lrpred[lrresult>.5] <- 1
+table(lepred, test$mpg01)
+```
+
+lrpred  0  1
+     0 47  4
+     1  7 54
+     
+Test error: 11/110 = 10%
+
+####g)
+
+```
+library(class)
+knntrain <- cbind(train$displacement, train$horsepower, train$weight, train$acceleration)
+knntest <- cbind(test$displacement, test$horsepower, test$weight, test$acceleration)
+knnresult <- knn(data.frame(knntrain), data.frame(knntest), train$mpg01, k=1)
+table(knnresult, test$mpg01)
+```
+
+Trying different numbers for k, the error rate goes down at least until 20 neighbours. with k=15 the error rate is 11/110 and with 20 it's 9/110. With k=1 the error rate is 15/110. With 30 it jumps up to 10/110.

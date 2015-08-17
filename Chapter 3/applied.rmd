@@ -1,0 +1,117 @@
+9
+---
+####a)
+
+```
+pairs(Auto)
+```
+
+####b)
+
+```
+cor(subset(Auto, select=-name))
+```
+
+####c)
+
+```
+lmfit <- lm(mpg~.-name, data=Auto)
+summary(lmfit)
+```
+
+i) Yes, mpg seems to be correlated negatively with weight and positively with year, origin and displacement.
+
+ii) weight, year and origin and to a slightly lesser extent displacement.
+
+iii) It suggests that as year gets larger so does mpg, so newer cars usually have better mpg.
+
+####d)
+
+```
+plot(lmfit)
+```
+
+The fit seems to underestimate values consistently in the beginning, suggesting a nonlinear fit. There are several outliers mostly in the latter values. One value especially (number 14) has high leverage and medium residual and may skew the fit to a wrong place.
+
+####e)
+
+For example:
+
+```
+lm(mpg~year*weight)
+```
+
+10.
+---
+####a)
+```
+lm(formula = Sales ~ Price + Urban + US, data = Carseats)
+```
+
+####b)
+
+Price is negatively correlated with Sales, as is US being positive (Yes value). Being Urban doesn't seem to affect price (?) as p-value is very high, so the null hypothesis of it not affecting price is most likely right.
+
+####c)
+
+(Without Urban as its p-value is too high)
+
+y = 13.04 - 0.055*Price + 1.2US (US is 0 or 1)
+
+####d)
+
+Urban
+
+####e)
+
+```
+lmfit <- lm(formula = Sales ~ Price + US, data = Carseats)
+```
+
+####f-h)
+
+(Muistutukseksi naita commandeja)
+
+```
+plot(predict(lmfit), rstudent(lmfit))
+```
+
+11
+---
+
+####a)
+
+```
+lmfit <- lm(y ~ 0 + x)
+summary(lmfit)
+```
+
+The p-value is small and indicates that x:s coefficient is valid, and the null hypothesis of them not being correlated is not true.
+
+####b)
+
+```
+lmfit2 <- lm(x ~ 0 + y)
+summary(lmfit)
+```
+
+Same as above
+
+####c)
+
+They have the same t-statistic
+
+####d)
+
+NOT DONE
+
+12
+---
+
+####a)
+
+When the sums of squares are the same.
+
+13
+---
+

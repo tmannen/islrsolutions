@@ -1,0 +1,91 @@
+Conceptual
+---
+
+1
+---
+
+####a and b)
+
+Since best subset considers every model, it will also try the ones that forward and backward stepwise try and also more, so it will have the model with the smallest RSS and best test score.
+
+####c)
+
+i) True. Forward stepwise keeps adding predictors without removing old ones.
+
+ii) True. the best model with k variables is chosen by removing a variable from the k+1 model.
+
+iii) False. The variables added may be different as variables added affect the model differently depending on what variables are already in the model.
+
+iv) False. Same as above.
+
+v) False. Same as in iii.
+
+2
+---
+
+####a)
+
+iii. Lasso uses a constraint on least squares and so leads to less variance but more bias.
+
+####b)
+
+Same as in lasso.
+
+####c)
+
+ii. Nonlinear methods are more complex and have more variance than linear squares.
+
+3
+---
+
+####a)
+
+iv. As s rises there is less restraint, so the model can better fit the data.
+
+####b)
+
+ii. At the start all coefficients are zero due to the constraint which isn't a good predictor. As s rises, an optimum is most likely found until it gets to infinity (no restrictions) and is least squares.
+
+####c)
+
+iii. At the start there is no variance as every coefficient is zero, and it steadily rises as the model gets more complex.
+
+####d)
+
+iv. As the model gets more complex, bias lessens.
+
+####e)
+
+v.
+
+4
+---
+
+Basically the lambda is like s, except the other way around, so same answers as 3 except inversed.
+
+5
+---
+
+####a and b)
+
+(On paper)
+The cost algorithm is in the book, and we use the values given. We then take partial derivate of B1 and set it to zero (where the minimum is, and we want to minimize this) and solve for B1, and do the same for B2. If we substitute either into the others formula, we get B1 == B2.
+
+####c and d)
+
+Similar to the ridge regression, except now B1 and B2 can take any value and equality holds, as long as a constraint is fulfilled.
+
+
+####
+
+6
+---
+
+####a)
+
+7
+---
+
+a)
+
+The errors are normally distributed with mean at 0 and variance delta squared. This means that yi is normally distributed with mean at B0 + XiBj and the variance of the error. We multiply each yi's probability to get likelihood.

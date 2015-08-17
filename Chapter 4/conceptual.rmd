@@ -1,0 +1,45 @@
+5
+---
+####a)
+QDA might fit the training set better as it can fit the errors as well. However on the test set LDA would win out because the actual underlying distribution is linear.
+
+####b)
+QDA would most likely perform better on both sets.
+
+####c)
+QDA will improve as it 'smoothes' with a bigger sample size.
+
+####d)
+It's possible with a very large sample size that QDA gives similar results to LDA, but will most likely not give a better test error rate.
+
+6
+---
+####a)
+exp(-6 + 0.05*40 + 3.5)/(1 + exp(-6 + 0.05*40 + 3.5))
+= 37.75%
+
+####b)
+Using logit odds and plugging in the 0.5, we get 50 hours.
+
+7
+---
+
+Plugging the numbers in, formula is basic LDA:
+
+```
+(0.8*dnorm(4, 10, 6))/(0.2*dnorm(4, 0, 6) + 0.8*dnorm(4, 10, 6))
+```
+
+8
+---
+KNN gets a 0% error rate on the training set (because it uses the points in the training set to measure distance, and same point would always be classified to the correct class on the training set) so it has a test error rate of 36%. Logistic regression is the better choice in this case.
+
+9
+---
+####a)
+
+Odds are p(x)*(1 - p(x)). Letting this equal 0.37, we get p(x) = 0.27
+
+####b)
+
+Plugging the numbers in p(x)*(1 - p(x)) we get 0.19.
