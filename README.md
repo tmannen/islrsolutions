@@ -1,4 +1,4 @@
-My attempts at the exercises in Introduction to Statistical Learning with applications in R.
+My attempts at the exercises (still quite incomplete) in Introduction to Statistical Learning with applications in R.
 
 The exercises are described in the book at the end of every chapter. The files are divided to answers on conceptual and applied problems.
 

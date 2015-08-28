@@ -36,3 +36,27 @@ As expected, same results (with some rounding errors)
 9
 ---
 
+####a)
+```
+hc.complete = hclust(dist(USArrests), method="complete")
+```
+
+####b)
+
+```
+cut = cutree(hc.complete, 3)
+print(cut)
+```
+
+####c)
+
+```
+hc.complete.scaled = hclust(dist(scale(USArrests)), method="complete")
+cut.scaled = cutree(hc.complete.scaled, 3)
+print(cut.scaled)
+print(cut)
+```
+
+####d)
+
+The results look somewhat different. The variables should most likely be scaled as then each feature would be equally 'weighted'.
